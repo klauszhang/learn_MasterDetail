@@ -59,12 +59,14 @@ namespace MasterDetail.Migrations
             ServiceItemName = c.String(nullable: false, maxLength: 80),
             LaborHours = c.Decimal(nullable: false, precision: 18, scale: 2),
             Rate = c.Decimal(nullable: false, precision: 18, scale: 2),
-            ExtendedPrice = c.Decimal(nullable: false, precision: 18, scale: 2),
+            //ExtendedPrice = c.Decimal(nullable: false, precision: 18, scale: 2),
             Notes = c.String(maxLength: 140),
           })
           .PrimaryKey(t => t.LaborId)
           .ForeignKey("dbo.WorkOrders", t => t.WorkOrderId, cascadeDelete: true)
           .Index(t => new { t.WorkOrderId, t.ServiceItemCode }, unique: true, name: "AK_Labor");
+
+      Sql("ALTER TABLE dbo.Labors ADD ExtendedPrice AS CAST(LaborHours*Rate AS Decimal(18,2))");
 
       CreateTable(
           "dbo.WorkOrders",
@@ -72,17 +74,39 @@ namespace MasterDetail.Migrations
           {
             WorkOrderId = c.Int(nullable: false, identity: true),
             CustomerId = c.Int(nullable: false),
-            OrderDateTime = c.DateTime(nullable: false),
+            OrderDateTime = c.DateTime(nullable: false, defaultValueSql: "GetDate()"),
             TargetDateTime = c.DateTime(),
             DropDeadDateTime = c.DateTime(),
             Description = c.String(maxLength: 256),
             WorkOrderStatus = c.Int(nullable: false),
-            Total = c.Decimal(nullable: false, precision: 18, scale: 2),
+            //Total = c.Decimal(nullable: false, precision: 18, scale: 2),
             CertificationRequirements = c.String(maxLength: 120),
           })
           .PrimaryKey(t => t.WorkOrderId)
           .ForeignKey("dbo.Customers", t => t.CustomerId, cascadeDelete: true)
           .Index(t => t.CustomerId);
+
+      Sql(@"CREATE FUNCTION dbo.GetSumOfPartsAndLabor(@workOrderId INT)
+          RETURNS DECIAML(18,2)
+          AS
+          BEGIN
+
+          DECLARE @partsSum Decimal(18,2);
+          DECLARE @laborSum Decimal(18,2);
+
+          SELECT @partsSum=Sum(ExtendedPrice)
+          FROM Parts
+          WHERE WorkOrderId=@workOrderId;
+
+          SELECT @laborSum=Sum(ExtendedPrice)
+          FROM Labors
+          WHERE WorkOrderId=@workOrderId;
+
+          RETURN ISNULL(@partsSum,0) + ISNULL(@laborSum,0);
+
+          END");
+
+      Sql("ALTER TABLE dbo.WorkOrders ADD Total AS dbo.GetSumOfPartsAndLabor(WorkOrderId)");
 
       CreateTable(
           "dbo.Parts",
@@ -94,7 +118,7 @@ namespace MasterDetail.Migrations
             inventoryItemName = c.String(nullable: false, maxLength: 80),
             Quantity = c.Int(nullable: false),
             UnitPrice = c.Decimal(nullable: false, precision: 18, scale: 2),
-            ExtendedPrice = c.Decimal(nullable: false, precision: 18, scale: 2),
+            //ExtendedPrice = c.Decimal(nullable: false, precision: 18, scale: 2),
             Notes = c.String(maxLength: 140),
             IsInstalled = c.Boolean(nullable: false),
           })
@@ -102,6 +126,8 @@ namespace MasterDetail.Migrations
           .ForeignKey("dbo.WorkOrders", t => t.WorkOrderId, cascadeDelete: true)
           .Index(t => t.WorkOrderId)
           .Index(t => new { t.inventoryItemName, t.InventoryItemCode }, unique: true, name: "AK_Part");
+
+      Sql("ALTER TABLE dbo.Parts ADD ExtendedPrice AS CAST(Quantity*UnitPrice AS Decimal(18,2))");
 
       CreateTable(
           "dbo.AspNetRoles",
