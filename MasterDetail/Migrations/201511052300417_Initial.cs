@@ -87,7 +87,7 @@ namespace MasterDetail.Migrations
           .Index(t => t.CustomerId);
 
       Sql(@"CREATE FUNCTION dbo.GetSumOfPartsAndLabor(@workOrderId INT)
-          RETURNS DECIAML(18,2)
+          RETURNS DECIMAL(18,2)
           AS
           BEGIN
 
