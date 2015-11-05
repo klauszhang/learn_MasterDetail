@@ -17,6 +17,7 @@ namespace MasterDetail.Models
       // Add custom user claims here
       return userIdentity;
     }
-  }
 
+    public string FirstName { get; set; }
+  }
 }

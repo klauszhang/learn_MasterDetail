@@ -32,6 +32,7 @@ namespace MasterDetail.DataLayer
       modelBuilder.Configurations.Add(new PartConfiguration());
       modelBuilder.Configurations.Add(new ServiceItemConfiguration());
       modelBuilder.Configurations.Add(new WorkOrderConfigration());
+      modelBuilder.Configurations.Add(new ApplicationUserConfiguration());
 
 
       base.OnModelCreating(modelBuilder);
